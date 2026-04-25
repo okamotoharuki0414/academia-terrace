@@ -812,6 +812,7 @@
       });
       title.textContent = `${viewYear}年${viewMonth + 1}月 のイベント`;
     }
+    filtered.sort((a, b) => (a.date + (a.time||'')).localeCompare(b.date + (b.time||'')));
     if (!filtered.length) { el.innerHTML = '<div class="empty">イベントがありません</div>'; return; }
     el.innerHTML = filtered.map(ev => `
       <div class="ev-card">
