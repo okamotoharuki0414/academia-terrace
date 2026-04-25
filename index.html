@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>academia terrace</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Hiragino Sans', 'Yu Gothic', sans-serif;
+      background: #f5f0e8;
+      color: #1a1a1a;
+      min-height: 100vh;
+    }
+
+    header {
+      background: #1a1a2e;
+      color: white;
+      padding: 20px 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    header h1 { font-size: 1.5rem; font-weight: 800; letter-spacing: 0.05em; }
+    header p { font-size: 0.8rem; opacity: 0.6; margin-top: 3px; }
+
+    .admin-status {
+      font-size: 0.8rem;
+      background: rgba(255,255,255,0.15);
+      padding: 6px 14px;
+      border-radius: 20px;
+      display: none;
+      align-items: center;
+      gap: 8px;
+    }
+    .admin-status.visible { display: flex; }
+
+    .logout-btn {
+      background: none;
+      border: 1px solid rgba(255,255,255,0.4);
+      color: white;
+      font-size: 0.75rem;
+      padding: 3px 10px;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .logout-btn:hover { background: rgba(255,255,255,0.2); }
+
+    main {
+      max-width: 1100px;
+      margin: 32px auto;
+      padding: 0 20px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+
+    section {
+      background: white;
+      border-radius: 4px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+      overflow: hidden;
+    }
+
+    .section-header {
+      background: #1a1a2e;
+      color: white;
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .section-header h2 { font-size: 0.95rem; font-weight: 700; letter-spacing: 0.05em; }
+
+    .add-btn {
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.3);
+      color: white;
+      font-size: 0.78rem;
+      padding: 5px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      display: none;
+      transition: background 0.2s;
+    }
+    .add-btn:hover { background: rgba(255,255,255,0.3); }
+    .admin-mode .add-btn { display: block; }
+
+    .section-body { padding: 20px; }
+
+    /* Post form */
+    .post-form {
+      background: #f9f6f0;
+      border: 1.5px dashed #ccc;
+      border-radius: 6px;
+      padding: 16px;
+      margin-bottom: 16px;
+      display: none;
+    }
+    .post-form.open { display: block; }
+
+    .post-form label {
+      display: block;
+      font-size: 0.73rem;
+      font-weight: 700;
+      color: #555;
+      margin: 8px 0 3px;
+    }
+    .post-form label:first-child { margin-top: 0; }
+
+    .post-form input,
+    .post-form select,
+    .post-form textarea {
+      width: 100%;
+      padding: 7px 10px;
+      border: 1.5px solid #ddd;
+      border-radius: 4px;
+      font-size: 0.85rem;
+      font-family: inherit;
+      background: white;
+    }
+    .post-form input:focus,
+    .post-form select:focus,
+    .post-form textarea:focus {
+      outline: none;
+      border-color: #1a1a2e;
+    }
+    .post-form textarea { min-height: 70px; resize: vertical; }
+
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+    .form-actions { display: flex; gap: 8px; margin-top: 12px; }
+
+    .submit-btn {
+      flex: 1;
+      padding: 8px;
+      background: #1a1a2e;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .submit-btn:hover { opacity: 0.85; }
+
+    .cancel-btn {
+      padding: 8px 16px;
+      background: white;
+      border: 1.5px solid #ddd;
+      border-radius: 4px;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+
+    /* Job posts */
+    .posts { display: flex; flex-direction: column; gap: 12px; }
+
+    .post-card {
+      border: 1px solid #e8e2d8;
+      border-radius: 4px;
+      padding: 14px 16px;
+      position: relative;
+      border-left: 3px solid #1a1a2e;
+    }
+    .post-card.intern { border-left-color: #2f855a; }
+    .post-card.other { border-left-color: #c05621; }
+
+    .post-top { display: flex; justify-content: space-between; align-items: flex-start; }
+    .post-title { font-size: 0.95rem; font-weight: 700; }
+    .post-company { font-size: 0.78rem; color: #666; margin-top: 2px; }
+
+    .tags { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 8px; }
+    .tag {
+      font-size: 0.68rem;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 2px;
+    }
+    .tag-job { background: #ebf4ff; color: #2b6cb0; }
+    .tag-intern { background: #f0fff4; color: #276749; }
+    .tag-other { background: #fff8f0; color: #c05621; }
+    .tag-deadline { background: #fff5f5; color: #c53030; }
+    .tag-location { background: #f7fafc; color: #4a5568; }
+
+    .post-body { font-size: 0.82rem; color: #555; line-height: 1.65; margin-top: 8px; }
+
+    .post-date { font-size: 0.7rem; color: #aaa; margin-top: 8px; }
+
+    .delete-btn {
+      background: none;
+      border: none;
+      color: #ccc;
+      cursor: pointer;
+      font-size: 0.85rem;
+      padding: 2px 5px;
+      border-radius: 3px;
+      display: none;
+      transition: color 0.2s;
+      flex-shrink: 0;
+    }
+    .delete-btn:hover { color: #e53e3e; }
+    .admin-mode .delete-btn { display: block; }
+
+    /* Calendar */
+    .cal-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+    .cal-nav span { font-size: 0.9rem; font-weight: 700; }
+    .cal-nav button {
+      background: none;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 3px 10px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      color: #444;
+      transition: all 0.2s;
+    }
+    .cal-nav button:hover { background: #1a1a2e; color: white; border-color: #1a1a2e; }
+
+    .cal-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 2px;
+      margin-bottom: 16px;
+    }
+
+    .cal-label {
+      text-align: center;
+      font-size: 0.68rem;
+      font-weight: 700;
+      color: #888;
+      padding-bottom: 6px;
+    }
+    .cal-label:first-child { color: #c53030; }
+    .cal-label:last-child { color: #2b6cb0; }
+
+    .cal-cell {
+      aspect-ratio: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding-top: 4px;
+      border-radius: 3px;
+      cursor: pointer;
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: #444;
+      position: relative;
+      transition: background 0.15s;
+    }
+    .cal-cell:hover { background: #f0ebe0; }
+    .cal-cell.other-month { color: #ccc; cursor: default; }
+    .cal-cell.other-month:hover { background: none; }
+    .cal-cell.today { background: #1a1a2e; color: white; border-radius: 3px; }
+    .cal-cell.today:hover { background: #2d2d4e; }
+    .cal-cell.has-event::after {
+      content: '';
+      display: block;
+      width: 4px; height: 4px;
+      border-radius: 50%;
+      background: #e53e3e;
+      margin-top: 2px;
+    }
+    .cal-cell.today.has-event::after { background: white; }
+    .cal-cell.sunday { color: #c53030; }
+    .cal-cell.sunday.today { color: white; }
+    .cal-cell.saturday { color: #2b6cb0; }
+    .cal-cell.saturday.today { color: white; }
+
+    .events-list { display: flex; flex-direction: column; gap: 8px; }
+    .events-list-title { font-size: 0.75rem; font-weight: 700; color: #888; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em; }
+
+    .event-item {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      padding: 10px 12px;
+      border: 1px solid #e8e2d8;
+      border-radius: 4px;
+    }
+
+    .event-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      margin-top: 5px;
+      flex-shrink: 0;
+    }
+
+    .event-info { flex: 1; min-width: 0; }
+    .event-title { font-size: 0.88rem; font-weight: 700; }
+    .event-meta { font-size: 0.73rem; color: #888; margin-top: 2px; }
+    .event-note { font-size: 0.78rem; color: #555; margin-top: 4px; line-height: 1.5; }
+
+    .empty-msg { text-align: center; color: #bbb; font-size: 0.85rem; padding: 32px 0; }
+
+    /* Event form */
+    .ev-form-date { font-size: 0.8rem; color: #888; margin-bottom: 10px; }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      display: none;
+    }
+    .modal-overlay.open { display: flex; }
+
+    .modal {
+      background: white;
+      border-radius: 8px;
+      padding: 32px;
+      width: 340px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+    }
+
+    .modal h2 { font-size: 1.1rem; font-weight: 800; margin-bottom: 6px; }
+    .modal p { font-size: 0.82rem; color: #888; margin-bottom: 20px; }
+
+    .modal label { display: block; font-size: 0.75rem; font-weight: 700; color: #555; margin-bottom: 4px; margin-top: 12px; }
+    .modal label:first-of-type { margin-top: 0; }
+
+    .modal input {
+      width: 100%;
+      padding: 9px 12px;
+      border: 1.5px solid #ddd;
+      border-radius: 6px;
+      font-size: 0.9rem;
+    }
+    .modal input:focus { outline: none; border-color: #1a1a2e; }
+
+    .modal-btn {
+      width: 100%;
+      margin-top: 20px;
+      padding: 11px;
+      background: #1a1a2e;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .modal-btn:hover { opacity: 0.85; }
+
+    .modal-cancel {
+      width: 100%;
+      margin-top: 8px;
+      padding: 9px;
+      background: none;
+      border: 1.5px solid #ddd;
+      border-radius: 6px;
+      font-size: 0.88rem;
+      cursor: pointer;
+      color: #555;
+    }
+
+    .error-msg { font-size: 0.8rem; color: #e53e3e; margin-top: 10px; display: none; }
+    .error-msg.visible { display: block; }
+
+    footer {
+      text-align: center;
+      padding: 32px;
+      font-size: 0.75rem;
+      color: #bbb;
+    }
+
+    .admin-link {
+      color: #ddd;
+      text-decoration: none;
+      background: none;
+      border: none;
+      font-size: 0.75rem;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .admin-link:hover { color: #888; }
+
+    @media (max-width: 700px) {
+      main { grid-template-columns: 1fr; }
+      header { padding: 16px 20px; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>academia terrace</h1>
+    <p>就活・インターン情報 &amp; イベントカレンダー</p>
+  </div>
+  <div class="admin-status" id="admin-status">
+    <span>管理者モード</span>
+    <button class="logout-btn" onclick="logout()">ログアウト</button>
+  </div>
+</header>
+
+<main id="main">
+
+  <!-- 就活・インターン -->
+  <section>
+    <div class="section-header">
+      <h2>就活・インターン情報</h2>
+      <button class="add-btn" onclick="toggleJobForm()">＋ 投稿</button>
+    </div>
+    <div class="section-body">
+      <div class="post-form" id="job-form">
+        <div class="form-row">
+          <div>
+            <label>種別</label>
+            <select id="jf-type">
+              <option>就活</option>
+              <option>インターン</option>
+              <option>その他</option>
+            </select>
+          </div>
+          <div>
+            <label>締切日</label>
+            <input type="date" id="jf-deadline">
+          </div>
+        </div>
+        <label>タイトル</label>
+        <input type="text" id="jf-title" placeholder="例: サマーインターン エンジニア職">
+        <div class="form-row">
+          <div>
+            <label>企業名</label>
+            <input type="text" id="jf-company" placeholder="例: 株式会社〇〇">
+          </div>
+          <div>
+            <label>勤務地・形式</label>
+            <input type="text" id="jf-location" placeholder="例: 東京 / リモート">
+          </div>
+        </div>
+        <label>詳細・URL</label>
+        <textarea id="jf-body" placeholder="募集要項、応募方法、URLなど"></textarea>
+        <div class="form-actions">
+          <button class="submit-btn" onclick="submitJob()">投稿する</button>
+          <button class="cancel-btn" onclick="toggleJobForm()">キャンセル</button>
+        </div>
+      </div>
+      <div class="posts" id="job-posts">
+        <div class="empty-msg">読み込み中...</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- カレンダー -->
+  <section>
+    <div class="section-header">
+      <h2>イベントカレンダー</h2>
+      <button class="add-btn" id="ev-add-btn" onclick="toggleEvForm()">＋ 追加</button>
+    </div>
+    <div class="section-body">
+      <div class="post-form" id="ev-form">
+        <div class="ev-form-date" id="ev-form-date">日付を選択してください</div>
+        <label>タイトル</label>
+        <input type="text" id="ef-title" placeholder="例: 合同説明会">
+        <div class="form-row">
+          <div>
+            <label>日付</label>
+            <input type="date" id="ef-date">
+          </div>
+          <div>
+            <label>時間（任意）</label>
+            <input type="time" id="ef-time">
+          </div>
+        </div>
+        <label>カテゴリ</label>
+        <select id="ef-category">
+          <option>就活</option>
+          <option>インターン</option>
+          <option>勉強会</option>
+          <option>懇親会</option>
+          <option>締切</option>
+          <option>その他</option>
+        </select>
+        <label>メモ（任意）</label>
+        <textarea id="ef-note" placeholder="詳細・URLなど" style="min-height:50px"></textarea>
+        <div class="form-actions">
+          <button class="submit-btn" onclick="submitEvent()">追加する</button>
+          <button class="cancel-btn" onclick="toggleEvForm()">キャンセル</button>
+        </div>
+      </div>
+
+      <div class="cal-nav">
+        <button onclick="changeMonth(-1)">‹</button>
+        <span id="cal-title"></span>
+        <button onclick="changeMonth(1)">›</button>
+      </div>
+      <div class="cal-grid" id="cal-grid"></div>
+
+      <div class="events-list-title" id="events-list-title">今月のイベント</div>
+      <div class="events-list" id="events-list">
+        <div class="empty-msg">読み込み中...</div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <button class="admin-link" onclick="openLogin()">管理</button>
+</footer>
+
+<!-- ログインモーダル -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <h2>管理者ログイン</h2>
+    <p>管理者のみアクセスできます</p>
+    <label>メールアドレス</label>
+    <input type="email" id="login-email" placeholder="example@email.com">
+    <label>パスワード</label>
+    <input type="password" id="login-password" placeholder="••••••••">
+    <div class="error-msg" id="login-error">メールアドレスまたはパスワードが違います</div>
+    <button class="modal-btn" onclick="login()">ログイン</button>
+    <button class="modal-cancel" onclick="closeLogin()">キャンセル</button>
+  </div>
+</div>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyCZafTLKFbqTMY8em37SlMpYR44KpmB6-o",
+    authDomain: "academia--terrace.firebaseapp.com",
+    projectId: "academia--terrace",
+    storageBucket: "academia--terrace.firebasestorage.app",
+    messagingSenderId: "264289147197",
+    appId: "1:264289147197:web:b5e1778e032bb5da838d54",
+    measurementId: "G-GN6LDX70V9"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+  const auth = firebase.auth();
+
+  const CAT_COLORS = {
+    '就活': '#2b6cb0', 'インターン': '#276749',
+    '勉強会': '#553c9a', '懇親会': '#c05621',
+    '締切': '#c53030', 'その他': '#718096'
+  };
+
+  let isAdmin = false;
+  let viewYear = new Date().getFullYear();
+  let viewMonth = new Date().getMonth();
+  let selectedDate = null;
+  let allEvents = [];
+
+  // Auth
+  auth.onAuthStateChanged(user => {
+    isAdmin = !!user;
+    document.getElementById('admin-status').classList.toggle('visible', isAdmin);
+    document.getElementById('main').classList.toggle('admin-mode', isAdmin);
+    if (isAdmin) closeLogin();
+  });
+
+  function openLogin() {
+    document.getElementById('modal').classList.add('open');
+    document.getElementById('login-error').classList.remove('visible');
+  }
+  function closeLogin() {
+    document.getElementById('modal').classList.remove('open');
+    document.getElementById('login-email').value = '';
+    document.getElementById('login-password').value = '';
+  }
+  function login() {
+    const email = document.getElementById('login-email').value;
+    const pass = document.getElementById('login-password').value;
+    auth.signInWithEmailAndPassword(email, pass)
+      .catch(() => {
+        document.getElementById('login-error').classList.add('visible');
+      });
+  }
+  function logout() {
+    auth.signOut();
+    document.getElementById('job-form').classList.remove('open');
+    document.getElementById('ev-form').classList.remove('open');
+  }
+
+  // Job board
+  function toggleJobForm() {
+    document.getElementById('job-form').classList.toggle('open');
+  }
+
+  function submitJob() {
+    const title = document.getElementById('jf-title').value.trim();
+    if (!title) { alert('タイトルを入力してください'); return; }
+
+    db.collection('posts').add({
+      type: document.getElementById('jf-type').value,
+      deadline: document.getElementById('jf-deadline').value,
+      title,
+      company: document.getElementById('jf-company').value.trim(),
+      location: document.getElementById('jf-location').value.trim(),
+      body: document.getElementById('jf-body').value.trim(),
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+    }).then(() => {
+      ['jf-title','jf-company','jf-location','jf-deadline','jf-body'].forEach(id => {
+        document.getElementById(id).value = '';
+      });
+      document.getElementById('job-form').classList.remove('open');
+    });
+  }
+
+  function deletePost(id) {
+    if (!confirm('この投稿を削除しますか？')) return;
+    db.collection('posts').doc(id).delete();
+  }
+
+  db.collection('posts').orderBy('createdAt', 'desc').onSnapshot(snap => {
+    const el = document.getElementById('job-posts');
+    if (snap.empty) {
+      el.innerHTML = '<div class="empty-msg">まだ投稿がありません</div>';
+      return;
+    }
+    el.innerHTML = snap.docs.map(doc => {
+      const p = doc.data();
+      const typeClass = p.type === 'インターン' ? 'intern' : p.type === 'その他' ? 'other' : '';
+      const typeTagClass = p.type === 'インターン' ? 'tag-intern' : p.type === 'その他' ? 'tag-other' : 'tag-job';
+      const deadlineTag = p.deadline ? `<span class="tag tag-deadline">締切 ${p.deadline}</span>` : '';
+      const locationTag = p.location ? `<span class="tag tag-location">📍 ${p.location}</span>` : '';
+      const date = p.createdAt ? p.createdAt.toDate().toLocaleDateString('ja-JP') : '';
+      return `
+        <div class="post-card ${typeClass}">
+          <div class="post-top">
+            <div>
+              <div class="post-title">${esc(p.title)}</div>
+              ${p.company ? `<div class="post-company">${esc(p.company)}</div>` : ''}
+            </div>
+            <button class="delete-btn" onclick="deletePost('${doc.id}')">✕</button>
+          </div>
+          <div class="tags">
+            <span class="tag ${typeTagClass}">${p.type}</span>
+            ${deadlineTag}${locationTag}
+          </div>
+          ${p.body ? `<div class="post-body">${esc(p.body).replace(/\n/g,'<br>')}</div>` : ''}
+          ${date ? `<div class="post-date">${date}</div>` : ''}
+        </div>`;
+    }).join('');
+  });
+
+  // Calendar
+  function changeMonth(d) {
+    viewMonth += d;
+    if (viewMonth > 11) { viewMonth = 0; viewYear++; }
+    if (viewMonth < 0) { viewMonth = 11; viewYear--; }
+    selectedDate = null;
+    renderCalendar();
+    renderEventList();
+  }
+
+  function toggleEvForm() {
+    const form = document.getElementById('ev-form');
+    form.classList.toggle('open');
+    if (selectedDate) document.getElementById('ef-date').value = selectedDate;
+  }
+
+  function submitEvent() {
+    const title = document.getElementById('ef-title').value.trim();
+    const date = document.getElementById('ef-date').value;
+    if (!title) { alert('タイトルを入力してください'); return; }
+    if (!date) { alert('日付を選択してください'); return; }
+
+    const category = document.getElementById('ef-category').value;
+    db.collection('events').add({
+      title,
+      date,
+      time: document.getElementById('ef-time').value,
+      category,
+      note: document.getElementById('ef-note').value.trim(),
+      color: CAT_COLORS[category] || '#718096',
+    }).then(() => {
+      document.getElementById('ef-title').value = '';
+      document.getElementById('ef-time').value = '';
+      document.getElementById('ef-note').value = '';
+      document.getElementById('ev-form').classList.remove('open');
+    });
+  }
+
+  function deleteEvent(id) {
+    if (!confirm('このイベントを削除しますか？')) return;
+    db.collection('events').doc(id).delete();
+  }
+
+  db.collection('events').orderBy('date').onSnapshot(snap => {
+    allEvents = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    renderCalendar();
+    renderEventList();
+  });
+
+  function renderCalendar() {
+    const today = new Date();
+    const todayStr = fmt(today);
+    document.getElementById('cal-title').textContent = `${viewYear}年 ${viewMonth + 1}月`;
+
+    const grid = document.getElementById('cal-grid');
+    grid.innerHTML = '';
+
+    ['日','月','火','水','木','金','土'].forEach((d, i) => {
+      const label = document.createElement('div');
+      label.className = 'cal-label';
+      label.textContent = d;
+      grid.appendChild(label);
+    });
+
+    const firstDay = new Date(viewYear, viewMonth, 1).getDay();
+    const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+    const daysInPrev = new Date(viewYear, viewMonth, 0).getDate();
+
+    for (let i = firstDay - 1; i >= 0; i--) {
+      grid.appendChild(makeCell(new Date(viewYear, viewMonth - 1, daysInPrev - i), true, todayStr));
+    }
+    for (let d = 1; d <= daysInMonth; d++) {
+      grid.appendChild(makeCell(new Date(viewYear, viewMonth, d), false, todayStr));
+    }
+    const total = firstDay + daysInMonth;
+    const rem = total % 7 === 0 ? 0 : 7 - (total % 7);
+    for (let d = 1; d <= rem; d++) {
+      grid.appendChild(makeCell(new Date(viewYear, viewMonth + 1, d), true, todayStr));
+    }
+  }
+
+  function makeCell(date, otherMonth, todayStr) {
+    const dateStr = fmt(date);
+    const dow = date.getDay();
+    const hasEvent = allEvents.some(e => e.date === dateStr);
+
+    const cell = document.createElement('div');
+    cell.className = 'cal-cell' +
+      (otherMonth ? ' other-month' : '') +
+      (dateStr === todayStr ? ' today' : '') +
+      (hasEvent ? ' has-event' : '') +
+      (dow === 0 ? ' sunday' : dow === 6 ? ' saturday' : '');
+    cell.textContent = date.getDate();
+
+    if (!otherMonth) {
+      cell.onclick = () => {
+        selectedDate = dateStr;
+        if (document.getElementById('ev-form').classList.contains('open')) {
+          document.getElementById('ef-date').value = dateStr;
+        }
+        renderCalendar();
+        renderEventList();
+      };
+    }
+    return cell;
+  }
+
+  function renderEventList() {
+    const listEl = document.getElementById('events-list');
+    const titleEl = document.getElementById('events-list-title');
+
+    let filtered;
+    if (selectedDate) {
+      filtered = allEvents.filter(e => e.date === selectedDate);
+      titleEl.textContent = `${selectedDate} のイベント`;
+    } else {
+      filtered = allEvents.filter(e => {
+        const d = new Date(e.date);
+        return d.getFullYear() === viewYear && d.getMonth() === viewMonth;
+      });
+      titleEl.textContent = `${viewYear}年${viewMonth + 1}月 のイベント`;
+    }
+
+    if (!filtered.length) {
+      listEl.innerHTML = '<div class="empty-msg">イベントがありません</div>';
+      return;
+    }
+
+    listEl.innerHTML = filtered.map(ev => {
+      const c = ev.color || '#718096';
+      return `
+        <div class="event-item">
+          <div class="event-dot" style="background:${c}"></div>
+          <div class="event-info">
+            <div class="event-title">${esc(ev.title)}</div>
+            <div class="event-meta">${ev.date}${ev.time ? ' ' + ev.time : ''} · ${ev.category}</div>
+            ${ev.note ? `<div class="event-note">${esc(ev.note).replace(/\n/g,'<br>')}</div>` : ''}
+          </div>
+          <button class="delete-btn" onclick="deleteEvent('${ev.id}')">✕</button>
+        </div>`;
+    }).join('');
+  }
+
+  function fmt(d) {
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  }
+
+  function esc(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  // Enter key for login
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && document.getElementById('modal').classList.contains('open')) login();
+  });
+</script>
+</body>
+</html>
