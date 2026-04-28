@@ -272,7 +272,8 @@
     .tag-deadline { background: #fff5f5; color: #c53030; }
     .tag-location { background: #f5f5f5; color: #555; }
 
-    .card-body { font-size: 0.82rem; color: var(--sub); line-height: 1.65; margin-top: 8px; }
+    .card-body { font-size: 0.82rem; color: var(--sub); line-height: 1.65; margin-top: 8px; word-break: break-all; }
+    .card-body a { color: var(--accent); text-decoration: underline; }
     .card-date { font-size: 0.68rem; color: var(--muted); margin-top: 8px; }
 
     .del-btn {
@@ -682,7 +683,7 @@
           ${p.deadline ? `<span class="tag tag-deadline">締切 ${p.deadline}</span>` : ''}
           ${p.location ? `<span class="tag tag-location">📍 ${esc(p.location)}</span>` : ''}
         </div>
-        ${p.body ? `<div class="card-body">${esc(p.body).replace(/\n/g,'<br>')}</div>` : ''}
+        ${p.body ? `<div class="card-body">${linkify(esc(p.body)).replace(/\n/g,'<br>')}</div>` : ''}
         ${date ? `<div class="card-date">${date}</div>` : ''}
       </div>`;
     }).join('');
@@ -850,6 +851,10 @@
   }
   function esc(s) {
     return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  function linkify(s) {
+    return s.replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>');
   }
 
   // 初期タブをURLハッシュから決定
