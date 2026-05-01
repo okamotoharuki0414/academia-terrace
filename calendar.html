@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>イベントカレンダー — PLATO</title>
+  <link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700;900&family=Space+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --c-ink:    #1a1a2e;
+      --c-yellow: #FFD966;
+      --c-green:  #4caf7d;
+      --c-cream:  #f9f5ed;
+      --c-paper:  #f0ede6;
+      --c-line:   #e8e2d9;
+      --c-soft:   #6b6b80;
+      --r-md: 10px; --r-lg: 16px; --r-pill: 999px;
+      --font-en: 'Space Grotesk', sans-serif;
+      --font-ja: 'Zen Kaku Gothic New', sans-serif;
+    }
+    body { font-family: var(--font-ja); background: var(--c-paper); color: var(--c-ink); min-height: 100vh; }
+
+    /* Header */
+    .g-header {
+      background: white; border-bottom: 2px solid var(--c-ink);
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    }
+    .g-header .inner {
+      max-width: 1080px; margin: 0 auto; padding: 0 20px;
+      height: 56px; display: flex; align-items: center; justify-content: space-between;
+    }
+    .brand {
+      font-family: var(--font-en); font-weight: 800; font-size: 18px;
+      color: var(--c-ink); text-decoration: none; display: flex; align-items: center; gap: 8px;
+    }
+    .brand img { height: 28px; width: auto; }
+    .header-right { display: flex; align-items: center; gap: 10px; }
+    .admin-badge {
+      font-family: var(--font-en); font-size: 11px; font-weight: 700; letter-spacing: 0.1em;
+      background: var(--c-yellow); color: var(--c-ink); padding: 4px 10px;
+      border-radius: var(--r-pill); border: 2px solid var(--c-ink); display: none;
+    }
+    .admin-badge.on { display: block; }
+    .nav-link {
+      font-family: var(--font-en); font-size: 13px; font-weight: 700;
+      color: var(--c-ink); text-decoration: none; padding: 7px 14px;
+      border: 2px solid var(--c-ink); border-radius: var(--r-pill); transition: all 0.15s;
+    }
+    .nav-link:hover { background: var(--c-ink); color: white; }
+    .auth-btn {
+      background: none; border: 2px solid var(--c-line); border-radius: var(--r-pill);
+      padding: 6px 12px; cursor: pointer; font-size: 16px; color: var(--c-soft); transition: all 0.15s;
+    }
+    .auth-btn:hover { border-color: var(--c-ink); color: var(--c-ink); }
+
+    /* Layout */
+    main {
+      max-width: 1080px; margin: 0 auto; padding: 72px 20px 60px;
+      display: grid; grid-template-columns: 1fr 300px; gap: 20px; align-items: start;
+    }
+    .page-head { grid-column: 1 / -1; margin: 28px 0 4px; }
+    .page-head .eyebrow {
+      font-family: var(--font-en); font-size: 11px; font-weight: 700;
+      letter-spacing: 0.2em; color: var(--c-soft); margin-bottom: 8px;
+    }
+    .page-head h1 { font-size: 28px; font-weight: 900; }
+
+    /* Card */
+    .card {
+      background: white; border: 2px solid var(--c-ink);
+      border-radius: var(--r-lg); padding: 24px; box-shadow: 0 5px 0 var(--c-ink);
+    }
+
+    /* Calendar */
+    .cal-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+    .cal-nav h2 { font-family: var(--font-en); font-size: 18px; font-weight: 800; }
+    .cal-nav button {
+      font-family: var(--font-en); font-size: 13px; font-weight: 700;
+      background: white; border: 2px solid var(--c-ink); border-radius: var(--r-pill);
+      padding: 6px 14px; cursor: pointer; transition: all 0.15s;
+    }
+    .cal-nav button:hover { background: var(--c-ink); color: white; }
+    .cal-grid { display: grid; grid-template-columns: repeat(7,1fr); gap: 3px; }
+    .cal-day-label {
+      text-align: center; font-family: var(--font-en); font-size: 11px; font-weight: 700;
+      color: var(--c-soft); padding: 4px 0 10px; letter-spacing: 0.05em;
+    }
+    .cal-day-label:first-child { color: #e53e3e; }
+    .cal-day-label:last-child  { color: #3182ce; }
+    .cal-cell {
+      min-height: 64px; border-radius: 8px; padding: 6px; cursor: pointer;
+      border: 1.5px solid transparent; background: var(--c-cream); transition: all 0.15s;
+    }
+    .cal-cell:hover { border-color: var(--c-ink); background: var(--c-paper); }
+    .cal-cell.other-month { background: transparent; opacity: 0.3; cursor: default; }
+    .cal-cell.other-month:hover { border-color: transparent; background: transparent; }
+    .cal-cell.today { background: var(--c-yellow); border-color: var(--c-ink); }
+    .cal-cell.selected { background: white; border-color: var(--c-ink); box-shadow: 0 2px 0 var(--c-ink); }
+    .cal-date { font-family: var(--font-en); font-size: 12px; font-weight: 700; }
+    .cal-cell.sunday .cal-date  { color: #e53e3e; }
+    .cal-cell.saturday .cal-date { color: #3182ce; }
+    .cal-events { margin-top: 3px; display: flex; flex-direction: column; gap: 2px; }
+    .cal-event-chip {
+      font-size: 10px; font-weight: 600; padding: 2px 5px; border-radius: 3px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+
+    /* Sidebar */
+    .sidebar { display: flex; flex-direction: column; gap: 16px; }
+    .panel-title {
+      font-family: var(--font-en); font-size: 11px; font-weight: 700;
+      letter-spacing: 0.15em; color: var(--c-soft); margin-bottom: 16px;
+    }
+
+    /* Event form — admin only */
+    .ev-form-card { display: none; }
+    .admin-mode .ev-form-card { display: block; }
+
+    .sidebar label { display: block; font-size: 12px; font-weight: 700; color: var(--c-soft); margin-bottom: 5px; }
+    .sidebar input, .sidebar select, .sidebar textarea {
+      width: 100%; padding: 9px 12px; border: 2px solid var(--c-line);
+      border-radius: var(--r-md); font-size: 13px; font-family: var(--font-ja);
+      background: var(--c-cream); color: var(--c-ink); margin-bottom: 12px; transition: border-color 0.2s;
+    }
+    .sidebar input:focus, .sidebar select:focus, .sidebar textarea:focus {
+      outline: none; border-color: var(--c-ink); background: white;
+    }
+    .sidebar textarea { resize: vertical; min-height: 60px; }
+    .add-btn {
+      width: 100%; padding: 12px; background: var(--c-ink); color: white;
+      border: 2px solid var(--c-ink); border-radius: var(--r-md);
+      font-family: var(--font-en); font-size: 13px; font-weight: 700; letter-spacing: 0.08em;
+      cursor: pointer; box-shadow: 0 4px 0 #000a1a; transition: transform 0.1s, box-shadow 0.1s;
+    }
+    .add-btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #000a1a; }
+
+    /* Event list */
+    .event-list { display: flex; flex-direction: column; gap: 8px; max-height: 400px; overflow-y: auto; }
+    .event-item {
+      display: flex; align-items: flex-start; gap: 10px; padding: 12px;
+      border-radius: var(--r-md); background: var(--c-cream); border: 1.5px solid var(--c-line);
+    }
+    .event-dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 5px; flex-shrink: 0; }
+    .event-item-title { font-size: 13px; font-weight: 700; }
+    .event-item-time  { font-size: 11px; color: var(--c-soft); margin-top: 2px; }
+    .event-item-body  { font-size: 12px; color: var(--c-soft); margin-top: 3px; word-break: break-all; }
+    .event-del {
+      margin-left: auto; background: none; border: none; color: #ccc;
+      cursor: pointer; font-size: 14px; padding: 2px 4px; border-radius: 4px;
+      transition: color 0.2s; flex-shrink: 0; display: none;
+    }
+    .admin-mode .event-del { display: block; }
+    .event-del:hover { color: #e53e3e; }
+    .empty-msg { text-align: center; color: #ccc; font-size: 13px; padding: 24px 0; }
+
+    /* Login modal */
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+      z-index: 200; display: none; align-items: flex-end; justify-content: center;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: white; border-radius: 16px 16px 0 0; border: 2px solid var(--c-ink);
+      border-bottom: none; padding: 24px 24px 32px; width: 100%; max-width: 480px;
+    }
+    .modal-handle { width: 36px; height: 4px; background: var(--c-line); border-radius: 2px; margin: 0 auto 20px; }
+    .modal h2 { font-size: 18px; font-weight: 900; margin-bottom: 20px; }
+    .modal .field { margin-bottom: 14px; }
+    .modal label { font-size: 12px; font-weight: 700; color: var(--c-soft); margin-bottom: 5px; display: block; }
+    .modal input {
+      width: 100%; padding: 11px 13px; border: 2px solid var(--c-line);
+      border-radius: var(--r-md); font-size: 14px; font-family: var(--font-ja); background: var(--c-cream);
+    }
+    .modal input:focus { outline: none; border-color: var(--c-ink); background: white; }
+    .err { font-size: 13px; color: #c0392b; margin-top: 8px; display: none; }
+    .err.on { display: block; }
+    .modal-actions { display: flex; flex-direction: column; gap: 8px; margin-top: 20px; }
+    .submit-btn {
+      width: 100%; padding: 13px; background: var(--c-ink); color: white;
+      border: 2px solid var(--c-ink); border-radius: var(--r-md);
+      font-family: var(--font-en); font-size: 14px; font-weight: 700; letter-spacing: 0.08em;
+      cursor: pointer; box-shadow: 0 4px 0 #000a1a; transition: transform 0.1s, box-shadow 0.1s;
+    }
+    .submit-btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #000a1a; }
+    .modal-cancel {
+      width: 100%; padding: 12px; background: none; border: 2px solid var(--c-line);
+      border-radius: var(--r-md); font-size: 14px; font-family: var(--font-ja); cursor: pointer; color: var(--c-soft);
+    }
+
+    @media (max-width: 768px) {
+      main {
+        grid-template-columns: 1fr;
+        padding: 64px 14px 40px;
+        gap: 14px;
+      }
+      .page-head {
+        grid-column: 1;
+        margin: 20px 0 4px;
+      }
+      .page-head h1 { font-size: 22px; }
+      .page-head img { height: 72px !important; }
+
+      .card { padding: 16px; }
+
+      /* カレンダーセル：コンパクト */
+      .cal-cell {
+        min-height: 48px;
+        padding: 4px;
+      }
+      .cal-date { font-size: 11px; }
+      .cal-event-chip { font-size: 9px; padding: 1px 3px; }
+      .cal-day-label { font-size: 10px; padding-bottom: 6px; }
+      .cal-nav h2 { font-size: 15px; }
+      .cal-nav button { font-size: 12px; padding: 5px 11px; }
+
+      /* サイドバー：1カラムで下に積む */
+      .sidebar { gap: 12px; }
+      .event-list { max-height: 280px; }
+
+      input, select, textarea { font-size: 16px !important; } /* iOS zoom防止 */
+
+      .nav-link { font-size: 12px; padding: 6px 11px; }
+      .brand { font-size: 16px; }
+    }
+  </style>
+</head>
+<body>
+
+<header class="g-header">
+  <div class="inner">
+    <a href="job-board.html" class="brand">
+      <img src="assets/logo-mark.png" alt="PLATO">
+      PLATO
+    </a>
+    <div class="header-right">
+      <span class="admin-badge" id="admin-badge">ADMIN</span>
+      <a href="job-board.html" class="nav-link">掲示板 →</a>
+      <button class="auth-btn" id="auth-btn" onclick="onAuthBtn()">⚙</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="page-head">
+    <div style="display:flex; align-items:flex-end; justify-content:space-between;">
+      <div>
+        <div class="eyebrow">EVENT CALENDAR</div>
+        <h1>イベントカレンダー</h1>
+      </div>
+      <img src="assets/char-pose-6.png" alt="" style="height:100px; width:auto; flex-shrink:0; margin-bottom:-4px;">
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="cal-nav">
+      <button onclick="changeMonth(-1)">‹ 前月</button>
+      <h2 id="cal-title"></h2>
+      <button onclick="changeMonth(1)">次月 ›</button>
+    </div>
+    <div class="cal-grid" id="cal-grid"></div>
+  </div>
+
+  <div class="sidebar">
+    <div class="card ev-form-card">
+      <div class="panel-title">ADD EVENT</div>
+      <label>タイトル</label>
+      <input type="text" id="f-title" placeholder="例: 合同説明会">
+      <label>日付</label>
+      <input type="date" id="f-date">
+      <label>時間（任意）</label>
+      <input type="time" id="f-time">
+      <label>カテゴリ</label>
+      <select id="f-category">
+        <option>就活</option><option>インターン</option><option>勉強会</option>
+        <option>懇親会</option><option>締切</option><option>その他</option>
+      </select>
+      <label>メモ（任意）</label>
+      <textarea id="f-note" placeholder="詳細・URL など"></textarea>
+      <button class="add-btn" onclick="addEvent()">追加する →</button>
+    </div>
+
+    <div class="card">
+      <div class="panel-title" id="list-title">EVENTS</div>
+      <div class="event-list" id="event-list"></div>
+    </div>
+  </div>
+</main>
+
+<!-- Login modal -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h2>管理者ログイン</h2>
+    <div class="field">
+      <label>メールアドレス</label>
+      <input type="email" id="login-email" placeholder="example@email.com" autocomplete="email">
+    </div>
+    <div class="field">
+      <label>パスワード</label>
+      <input type="password" id="login-pass" placeholder="••••••••" autocomplete="current-password">
+    </div>
+    <div class="err" id="login-err">メールアドレスまたはパスワードが違います</div>
+    <div class="modal-actions">
+      <button class="submit-btn" onclick="login()">ログイン</button>
+      <button class="modal-cancel" onclick="closeModal()">キャンセル</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script>
+  firebase.initializeApp({
+    apiKey: "AIzaSyCZafTLKFbqTMY8em37SlMpYR44KpmB6-o",
+    authDomain: "academia--terrace.firebaseapp.com",
+    projectId: "academia--terrace",
+    storageBucket: "academia--terrace.firebasestorage.app",
+    messagingSenderId: "264289147197",
+    appId: "1:264289147197:web:b5e1778e032bb5da838d54"
+  });
+  const db = firebase.firestore();
+  const auth = firebase.auth();
+
+  const CAT_COLORS = {
+    '就活':'#5c8df6','インターン':'#4caf7d','勉強会':'#a78bfa',
+    '懇親会':'#ff8a65','締切':'#ef4444','その他':'#94a3b8'
+  };
+
+  let isAdmin = false;
+  let viewYear = new Date().getFullYear();
+  let viewMonth = new Date().getMonth();
+  let selectedDate = null;
+  let allEvents = [];
+
+  auth.onAuthStateChanged(user => {
+    isAdmin = !!user;
+    document.getElementById('admin-badge').classList.toggle('on', isAdmin);
+    document.body.classList.toggle('admin-mode', isAdmin);
+    document.getElementById('auth-btn').textContent = isAdmin ? '⏻' : '⚙';
+  });
+
+  function onAuthBtn() {
+    if (isAdmin) { if (confirm('ログアウトしますか？')) auth.signOut(); }
+    else openModal();
+  }
+
+  function changeMonth(d) {
+    viewMonth += d;
+    if (viewMonth > 11) { viewMonth = 0; viewYear++; }
+    if (viewMonth < 0)  { viewMonth = 11; viewYear--; }
+    selectedDate = null;
+    renderCalendar();
+    renderEventList();
+  }
+
+  function addEvent() {
+    const title = document.getElementById('f-title').value.trim();
+    const date  = document.getElementById('f-date').value;
+    if (!title) { alert('タイトルを入力してください'); return; }
+    if (!date)  { alert('日付を選択してください'); return; }
+    const cat = document.getElementById('f-category').value;
+    db.collection('events').add({
+      title, date,
+      time: document.getElementById('f-time').value,
+      category: cat,
+      note: document.getElementById('f-note').value.trim(),
+      color: CAT_COLORS[cat] || '#94a3b8',
+    }).then(() => {
+      document.getElementById('f-title').value = '';
+      document.getElementById('f-time').value  = '';
+      document.getElementById('f-note').value  = '';
+    });
+  }
+
+  function deleteEvent(id) {
+    if (!confirm('削除しますか？')) return;
+    db.collection('events').doc(id).delete();
+  }
+
+  db.collection('events').orderBy('date').onSnapshot(snap => {
+    allEvents = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    renderCalendar();
+    renderEventList();
+  });
+
+  function renderCalendar() {
+    document.getElementById('cal-title').textContent =
+      `${viewYear} / ${String(viewMonth+1).padStart(2,'0')}`;
+    const grid = document.getElementById('cal-grid');
+    grid.innerHTML = '';
+    ['SUN','MON','TUE','WED','THU','FRI','SAT'].forEach(d => {
+      const el = document.createElement('div');
+      el.className = 'cal-day-label';
+      el.textContent = d;
+      grid.appendChild(el);
+    });
+    const todayStr = fmt(new Date());
+    const firstDay = new Date(viewYear, viewMonth, 1).getDay();
+    const daysInMonth = new Date(viewYear, viewMonth+1, 0).getDate();
+    const prevDays = new Date(viewYear, viewMonth, 0).getDate();
+    for (let i = firstDay-1; i >= 0; i--)
+      grid.appendChild(makeCell(new Date(viewYear, viewMonth-1, prevDays-i), true, todayStr));
+    for (let d = 1; d <= daysInMonth; d++)
+      grid.appendChild(makeCell(new Date(viewYear, viewMonth, d), false, todayStr));
+    const total = firstDay + daysInMonth;
+    const rem = total % 7 === 0 ? 0 : 7 - (total % 7);
+    for (let d = 1; d <= rem; d++)
+      grid.appendChild(makeCell(new Date(viewYear, viewMonth+1, d), true, todayStr));
+  }
+
+  function makeCell(date, other, todayStr) {
+    const ds = fmt(date);
+    const dow = date.getDay();
+    const cell = document.createElement('div');
+    cell.className = 'cal-cell'
+      + (other ? ' other-month' : '')
+      + (ds === todayStr ? ' today' : '')
+      + (ds === selectedDate ? ' selected' : '')
+      + (dow === 0 ? ' sunday' : dow === 6 ? ' saturday' : '');
+    const dateEl = document.createElement('div');
+    dateEl.className = 'cal-date';
+    dateEl.textContent = date.getDate();
+    cell.appendChild(dateEl);
+    const dayEvs = allEvents.filter(e => e.date === ds);
+    if (dayEvs.length) {
+      const chips = document.createElement('div');
+      chips.className = 'cal-events';
+      dayEvs.slice(0,3).forEach(ev => {
+        const chip = document.createElement('div');
+        chip.className = 'cal-event-chip';
+        const c = ev.color || '#94a3b8';
+        chip.style.background = c + '22';
+        chip.style.color = c;
+        chip.textContent = ev.title;
+        chips.appendChild(chip);
+      });
+      if (dayEvs.length > 3) {
+        const more = document.createElement('div');
+        more.className = 'cal-event-chip';
+        more.style.color = '#94a3b8';
+        more.textContent = `+${dayEvs.length-3}件`;
+        chips.appendChild(more);
+      }
+      cell.appendChild(chips);
+    }
+    if (!other) cell.onclick = () => {
+      selectedDate = selectedDate === ds ? null : ds;
+      if (selectedDate) document.getElementById('f-date').value = selectedDate;
+      renderCalendar();
+      renderEventList();
+    };
+    return cell;
+  }
+
+  function renderEventList() {
+    const list = document.getElementById('event-list');
+    const titleEl = document.getElementById('list-title');
+    let filtered;
+    if (selectedDate) {
+      filtered = allEvents.filter(e => e.date === selectedDate);
+      titleEl.textContent = selectedDate + ' のイベント';
+    } else {
+      filtered = allEvents.filter(e => {
+        const d = new Date(e.date + 'T00:00:00');
+        return d.getFullYear() === viewYear && d.getMonth() === viewMonth;
+      });
+      titleEl.textContent = `${viewYear}年${viewMonth+1}月`;
+    }
+    filtered.sort((a,b) => (a.date+(a.time||'')).localeCompare(b.date+(b.time||'')));
+    if (!filtered.length) { list.innerHTML = '<div class="empty-msg">イベントがありません</div>'; return; }
+    list.innerHTML = filtered.map(ev => {
+      const c = ev.color || '#94a3b8';
+      return `<div class="event-item">
+        <div class="event-dot" style="background:${c}"></div>
+        <div style="flex:1;min-width:0">
+          <div class="event-item-title">${esc(ev.title)}</div>
+          <div class="event-item-time">${ev.date}${ev.time?' '+ev.time:''} · ${ev.category}</div>
+          ${ev.note ? `<div class="event-item-body">${esc(ev.note).replace(/\n/g,'<br>')}</div>` : ''}
+        </div>
+        <button class="event-del" onclick="deleteEvent('${ev.id}')">✕</button>
+      </div>`;
+    }).join('');
+  }
+
+  function openModal() { document.getElementById('modal').classList.add('open'); }
+  function closeModal() {
+    document.getElementById('modal').classList.remove('open');
+    document.getElementById('login-err').classList.remove('on');
+    document.getElementById('login-email').value = '';
+    document.getElementById('login-pass').value = '';
+  }
+  function login() {
+    auth.signInWithEmailAndPassword(
+      document.getElementById('login-email').value,
+      document.getElementById('login-pass').value
+    ).then(closeModal).catch(() => document.getElementById('login-err').classList.add('on'));
+  }
+  document.getElementById('login-pass').addEventListener('keydown', e => { if (e.key === 'Enter') login(); });
+
+  function fmt(d) {
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  }
+  function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  renderCalendar();
+  renderEventList();
+</script>
+</body>
+</html>

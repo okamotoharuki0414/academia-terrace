@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>就活・インターン掲示板 — PLATO</title>
+  <link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700;900&family=Space+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --c-ink:    #1a1a2e;
+      --c-navy:   #0e2a5e;
+      --c-yellow: #FFD966;
+      --c-green:  #4caf7d;
+      --c-cream:  #f9f5ed;
+      --c-paper:  #f0ede6;
+      --c-line:   #e8e2d9;
+      --c-soft:   #6b6b80;
+      --r-md: 10px; --r-lg: 16px; --r-pill: 999px;
+      --font-en: 'Space Grotesk', sans-serif;
+      --font-ja: 'Zen Kaku Gothic New', sans-serif;
+    }
+    body { font-family: var(--font-ja); background: var(--c-paper); color: var(--c-ink); min-height: 100vh; }
+
+    /* Header */
+    .g-header {
+      background: white; border-bottom: 2px solid var(--c-ink);
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    }
+    .g-header .inner {
+      max-width: 960px; margin: 0 auto; padding: 0 20px;
+      height: 56px; display: flex; align-items: center; justify-content: space-between;
+    }
+    .brand {
+      font-family: var(--font-en); font-weight: 800; font-size: 18px;
+      color: var(--c-ink); text-decoration: none; display: flex; align-items: center; gap: 8px;
+    }
+    .brand img { height: 28px; width: auto; }
+    .header-right { display: flex; align-items: center; gap: 10px; }
+    .admin-badge {
+      font-family: var(--font-en); font-size: 11px; font-weight: 700; letter-spacing: 0.1em;
+      background: var(--c-yellow); color: var(--c-ink); padding: 4px 10px;
+      border-radius: var(--r-pill); border: 2px solid var(--c-ink); display: none;
+    }
+    .admin-badge.on { display: block; }
+    .nav-link {
+      font-family: var(--font-en); font-size: 13px; font-weight: 700;
+      color: var(--c-ink); text-decoration: none; padding: 7px 14px;
+      border: 2px solid var(--c-ink); border-radius: var(--r-pill); transition: all 0.15s;
+    }
+    .nav-link:hover { background: var(--c-ink); color: white; }
+    .auth-btn {
+      background: none; border: 2px solid var(--c-line); border-radius: var(--r-pill);
+      padding: 6px 12px; cursor: pointer; font-size: 16px; color: var(--c-soft);
+      transition: all 0.15s;
+    }
+    .auth-btn:hover { border-color: var(--c-ink); color: var(--c-ink); }
+
+    /* Layout */
+    main { max-width: 960px; margin: 0 auto; padding: 72px 20px 60px; }
+    .page-head { margin: 28px 0 24px; }
+    .page-head .eyebrow {
+      font-family: var(--font-en); font-size: 11px; font-weight: 700;
+      letter-spacing: 0.2em; color: var(--c-soft); margin-bottom: 8px;
+    }
+    .page-head h1 { font-size: 28px; font-weight: 900; }
+
+    /* Filters */
+    .filters { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 24px; }
+    .filter-btn {
+      font-family: var(--font-en); font-size: 12px; font-weight: 700; letter-spacing: 0.08em;
+      padding: 7px 18px; border: 2px solid var(--c-ink); border-radius: var(--r-pill);
+      background: white; color: var(--c-ink); cursor: pointer; transition: all 0.15s;
+    }
+    .filter-btn.active, .filter-btn:hover { background: var(--c-ink); color: white; }
+
+    /* Post form — admin only */
+    .post-form {
+      background: white; border: 2px solid var(--c-ink); border-radius: var(--r-lg);
+      padding: 28px; margin-bottom: 32px; box-shadow: 0 5px 0 var(--c-ink); display: none;
+    }
+    .admin-mode .post-form { display: block; }
+    .post-form .form-title {
+      font-family: var(--font-en); font-size: 11px; font-weight: 700;
+      letter-spacing: 0.15em; color: var(--c-soft); margin-bottom: 18px;
+    }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .form-grid .full { grid-column: 1 / -1; }
+    label { display: block; font-size: 12px; font-weight: 700; color: var(--c-soft); margin-bottom: 5px; }
+    input, select, textarea {
+      width: 100%; padding: 10px 13px; border: 2px solid var(--c-line);
+      border-radius: var(--r-md); font-size: 14px; font-family: var(--font-ja);
+      background: var(--c-cream); color: var(--c-ink); transition: border-color 0.2s;
+    }
+    input:focus, select:focus, textarea:focus { outline: none; border-color: var(--c-ink); background: white; }
+    textarea { resize: vertical; min-height: 80px; }
+    .submit-btn {
+      margin-top: 16px; width: 100%; padding: 13px;
+      background: var(--c-ink); color: white; border: 2px solid var(--c-ink);
+      border-radius: var(--r-md); font-family: var(--font-en); font-size: 14px; font-weight: 700;
+      letter-spacing: 0.08em; cursor: pointer; box-shadow: 0 4px 0 #000a1a;
+      transition: transform 0.1s, box-shadow 0.1s;
+    }
+    .submit-btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #000a1a; }
+
+    /* Cards */
+    .posts { display: flex; flex-direction: column; gap: 14px; }
+    .post-card {
+      background: white; border: 2px solid var(--c-ink); border-radius: var(--r-lg);
+      padding: 22px 24px; box-shadow: 0 4px 0 var(--c-ink);
+    }
+    .post-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+    .post-title { font-size: 16px; font-weight: 800; line-height: 1.4; }
+    .post-company { font-size: 13px; color: var(--c-soft); margin-top: 3px; }
+    .tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 12px; }
+    .tag {
+      font-family: var(--font-en); font-size: 11px; font-weight: 700; letter-spacing: 0.08em;
+      padding: 4px 10px; border-radius: var(--r-pill); border: 1.5px solid currentColor;
+    }
+    .tag-就活      { color: var(--c-navy); background: #e8f0ff; }
+    .tag-インターン { color: #276749; background: #e6f7ee; }
+    .tag-その他    { color: #7a4f00; background: #fff8e1; }
+    .tag-deadline  { color: #c0392b; background: #fdecea; }
+    .tag-location  { color: var(--c-soft); background: var(--c-cream); }
+    .post-body { margin-top: 12px; font-size: 13px; color: var(--c-soft); line-height: 1.75; word-break: break-all; }
+    .post-body a { color: var(--c-navy); }
+    .post-meta { margin-top: 12px; font-size: 12px; color: #bbb; display: flex; justify-content: space-between; align-items: center; }
+    .delete-btn {
+      background: none; border: none; color: #ccc; cursor: pointer;
+      font-size: 16px; padding: 2px 6px; border-radius: 4px;
+      transition: color 0.2s; display: none;
+    }
+    .admin-mode .delete-btn { display: block; }
+    .delete-btn:hover { color: #e53e3e; }
+    .empty { text-align: center; color: #bbb; padding: 56px 0; font-size: 14px; }
+
+    /* Login modal */
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+      z-index: 200; display: none; align-items: flex-end; justify-content: center;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: white; border-radius: 16px 16px 0 0; border: 2px solid var(--c-ink);
+      border-bottom: none; padding: 24px 24px 32px; width: 100%; max-width: 480px;
+    }
+    .modal-handle { width: 36px; height: 4px; background: var(--c-line); border-radius: 2px; margin: 0 auto 20px; }
+    .modal h2 { font-size: 18px; font-weight: 900; margin-bottom: 20px; }
+    .modal .field { margin-bottom: 14px; }
+    .modal label { font-size: 12px; font-weight: 700; color: var(--c-soft); margin-bottom: 5px; display: block; }
+    .modal input {
+      width: 100%; padding: 11px 13px; border: 2px solid var(--c-line);
+      border-radius: var(--r-md); font-size: 14px; font-family: var(--font-ja); background: var(--c-cream);
+    }
+    .modal input:focus { outline: none; border-color: var(--c-ink); background: white; }
+    .err { font-size: 13px; color: #c0392b; margin-top: 8px; display: none; }
+    .err.on { display: block; }
+    .modal-actions { display: flex; flex-direction: column; gap: 8px; margin-top: 20px; }
+    .modal-cancel {
+      width: 100%; padding: 12px; background: none; border: 2px solid var(--c-line);
+      border-radius: var(--r-md); font-size: 14px; font-family: var(--font-ja); cursor: pointer; color: var(--c-soft);
+    }
+
+    @media (max-width: 600px) {
+      .form-grid { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 768px) {
+      main { padding: 64px 14px 40px; }
+      .page-head { margin: 20px 0 18px; }
+      .page-head h1 { font-size: 22px; }
+      .page-head img { height: 72px !important; }
+
+      .filters { gap: 6px; }
+      .filter-btn { font-size: 11px; padding: 6px 14px; }
+
+      .post-form { padding: 20px 16px; }
+      .post-form .form-title { font-size: 10px; margin-bottom: 14px; }
+
+      input, select, textarea { font-size: 16px !important; } /* iOS zoom防止 */
+
+      .post-card { padding: 16px; }
+      .post-title { font-size: 14px; }
+      .post-company { font-size: 12px; }
+      .tag { font-size: 10px; padding: 3px 8px; }
+      .post-body { font-size: 12px; }
+      .post-meta { font-size: 11px; }
+
+      .nav-link { font-size: 12px; padding: 6px 11px; }
+      .brand { font-size: 16px; }
+    }
+  </style>
+</head>
+<body>
+
+<header class="g-header">
+  <div class="inner">
+    <a href="job-board.html" class="brand">
+      <img src="assets/logo-mark.png" alt="PLATO">
+      PLATO
+    </a>
+    <div class="header-right">
+      <span class="admin-badge" id="admin-badge">ADMIN</span>
+      <a href="calendar.html" class="nav-link">カレンダー →</a>
+      <button class="auth-btn" id="auth-btn" onclick="onAuthBtn()">⚙</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="page-head">
+    <div style="display:flex; align-items:flex-end; justify-content:space-between;">
+      <div>
+        <div class="eyebrow">JOB BOARD</div>
+        <h1>就活・インターン掲示板</h1>
+      </div>
+      <img src="assets/char-pose-laptop-stand.png" alt="" style="height:100px; width:auto; flex-shrink:0; margin-bottom:-4px;">
+    </div>
+  </div>
+
+  <div class="filters">
+    <button class="filter-btn active" onclick="setFilter('all',this)">ALL</button>
+    <button class="filter-btn" onclick="setFilter('就活',this)">就活</button>
+    <button class="filter-btn" onclick="setFilter('インターン',this)">インターン</button>
+    <button class="filter-btn" onclick="setFilter('その他',this)">その他</button>
+  </div>
+
+  <div class="post-form">
+    <div class="form-title">POST AN OPPORTUNITY</div>
+    <div class="form-grid">
+      <div>
+        <label>種別</label>
+        <select id="f-type"><option>就活</option><option>インターン</option><option>その他</option></select>
+      </div>
+      <div>
+        <label>締切日</label>
+        <input type="date" id="f-deadline">
+      </div>
+      <div class="full">
+        <label>タイトル / 役職名</label>
+        <input type="text" id="f-title" placeholder="例: サマーインターン2026 エンジニア職">
+      </div>
+      <div>
+        <label>企業・団体名</label>
+        <input type="text" id="f-company" placeholder="例: 株式会社〇〇">
+      </div>
+      <div>
+        <label>勤務地・形式</label>
+        <input type="text" id="f-location" placeholder="例: 東京 / リモート可">
+      </div>
+      <div class="full">
+        <label>詳細・URL など</label>
+        <textarea id="f-body" placeholder="募集要項、応募方法、URLなどを記入してください"></textarea>
+      </div>
+    </div>
+    <button class="submit-btn" onclick="submitPost()">投稿する →</button>
+  </div>
+
+  <div class="posts" id="posts"><div class="empty">読み込み中...</div></div>
+</main>
+
+<!-- Login modal -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h2>管理者ログイン</h2>
+    <div class="field">
+      <label>メールアドレス</label>
+      <input type="email" id="login-email" placeholder="example@email.com" autocomplete="email">
+    </div>
+    <div class="field">
+      <label>パスワード</label>
+      <input type="password" id="login-pass" placeholder="••••••••" autocomplete="current-password">
+    </div>
+    <div class="err" id="login-err">メールアドレスまたはパスワードが違います</div>
+    <div class="modal-actions">
+      <button class="submit-btn" onclick="login()">ログイン</button>
+      <button class="modal-cancel" onclick="closeModal()">キャンセル</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script>
+  firebase.initializeApp({
+    apiKey: "AIzaSyCZafTLKFbqTMY8em37SlMpYR44KpmB6-o",
+    authDomain: "academia--terrace.firebaseapp.com",
+    projectId: "academia--terrace",
+    storageBucket: "academia--terrace.firebasestorage.app",
+    messagingSenderId: "264289147197",
+    appId: "1:264289147197:web:b5e1778e032bb5da838d54"
+  });
+  const db = firebase.firestore();
+  const auth = firebase.auth();
+
+  let isAdmin = false;
+  let currentFilter = 'all';
+  let allPosts = [];
+
+  auth.onAuthStateChanged(user => {
+    isAdmin = !!user;
+    document.getElementById('admin-badge').classList.toggle('on', isAdmin);
+    document.body.classList.toggle('admin-mode', isAdmin);
+    document.getElementById('auth-btn').textContent = isAdmin ? '⏻' : '⚙';
+  });
+
+  function onAuthBtn() {
+    if (isAdmin) { if (confirm('ログアウトしますか？')) auth.signOut(); }
+    else openModal();
+  }
+
+  function setFilter(f, btn) {
+    currentFilter = f;
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    render();
+  }
+
+  function submitPost() {
+    const title = document.getElementById('f-title').value.trim();
+    if (!title) { alert('タイトルを入力してください'); return; }
+    db.collection('posts').add({
+      type: document.getElementById('f-type').value,
+      deadline: document.getElementById('f-deadline').value,
+      title,
+      company: document.getElementById('f-company').value.trim(),
+      location: document.getElementById('f-location').value.trim(),
+      body: document.getElementById('f-body').value.trim(),
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+    }).then(() => {
+      ['f-title','f-company','f-location','f-deadline','f-body'].forEach(id => document.getElementById(id).value = '');
+    });
+  }
+
+  function deletePost(id) {
+    if (!confirm('削除しますか？')) return;
+    db.collection('posts').doc(id).delete();
+  }
+
+  db.collection('posts').orderBy('createdAt','desc').onSnapshot(snap => {
+    allPosts = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    render();
+  });
+
+  function render() {
+    const filtered = currentFilter === 'all' ? allPosts : allPosts.filter(p => p.type === currentFilter);
+    const el = document.getElementById('posts');
+    if (!filtered.length) { el.innerHTML = '<div class="empty">まだ投稿がありません</div>'; return; }
+    el.innerHTML = filtered.map(p => {
+      const date = p.createdAt ? p.createdAt.toDate().toLocaleDateString('ja-JP') : '';
+      const bodyHtml = p.body ? esc(p.body).replace(/\n/g,'<br>').replace(/(https?:\/\/[^\s<]+)/g,'<a href="$1" target="_blank" rel="noopener">$1</a>') : '';
+      return `<div class="post-card">
+        <div class="post-header">
+          <div>
+            <div class="post-title">${esc(p.title)}</div>
+            ${p.company ? `<div class="post-company">${esc(p.company)}</div>` : ''}
+          </div>
+          <button class="delete-btn" onclick="deletePost('${p.id}')">✕</button>
+        </div>
+        <div class="tags">
+          <span class="tag tag-${p.type}">${p.type}</span>
+          ${p.deadline ? `<span class="tag tag-deadline">締切 ${p.deadline}</span>` : ''}
+          ${p.location ? `<span class="tag tag-location">📍 ${esc(p.location)}</span>` : ''}
+        </div>
+        ${bodyHtml ? `<div class="post-body">${bodyHtml}</div>` : ''}
+        ${date ? `<div class="post-meta"><span>投稿日: ${date}</span></div>` : ''}
+      </div>`;
+    }).join('');
+  }
+
+  function openModal() { document.getElementById('modal').classList.add('open'); }
+  function closeModal() {
+    document.getElementById('modal').classList.remove('open');
+    document.getElementById('login-err').classList.remove('on');
+    document.getElementById('login-email').value = '';
+    document.getElementById('login-pass').value = '';
+  }
+  function login() {
+    auth.signInWithEmailAndPassword(
+      document.getElementById('login-email').value,
+      document.getElementById('login-pass').value
+    ).then(closeModal).catch(() => document.getElementById('login-err').classList.add('on'));
+  }
+  document.getElementById('login-pass').addEventListener('keydown', e => { if (e.key === 'Enter') login(); });
+
+  function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+</script>
+</body>
+</html>
